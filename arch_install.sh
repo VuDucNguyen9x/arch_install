@@ -113,7 +113,7 @@ if [ "$1" == "" ]; then
 # EOF
 	cfdisk /dev/${drive}
 	#mkfs.fat -F32 -L "EFI System" /dev/${drive}1
-	mkfs.ext4 -F -L "Arch Linux" /dev/${drive}5
+	mkfs.ext4 -L "Arch Linux" /dev/${drive}5
 
 	mount /dev/${drive}5 /mnt
 	mkdir /mnt/efi
@@ -173,7 +173,8 @@ else
 	useradd -m -G wheel,uucp -s /bin/zsh -c "Vu Duc Nguyen" ${user}
 	#sudo -u ${user} xdg-user-dirs-update
 	#eval userpath=~${user}
-
+	sudo pacman -Syu gnome3 gnome3_extra
+	sudo pacman -S apps_install
 
 	for item in ${aurinstall}; do
 		name=$(basename ${item} .git)

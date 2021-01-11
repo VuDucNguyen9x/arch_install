@@ -3,13 +3,11 @@
 timezone="Asia/Manila"
 localization="en_US.UTF-8"
 keyboardlayout="us"
-xkeyboardlayout="us"
 hostname="ThinkPad"
 swapsize="2G"
 
 base_install="
-	base base-devel linux-zen linux-firmware ntfs-3g neovim zsh grub os-prober intel-ucode efibootmgr dnsmasq
-	zip unzip p7zip unrar tlp git
+	base base-devel linux-zen linux-firmware ntfs-3g neovim zsh grub os-prober intel-ucode efibootmgr dnsmasq zip unzip p7zip unrar tlp git
 "
 
 # install= "xf86-video-intel libva-intel-driver
@@ -77,18 +75,10 @@ if [ "$1" == "" ]; then
 	timedatectl set-timezone ${timezone}
 	
 	fdisk -l
-	read -p 'Input drive: ' drive
+	read -p 'Input drive (sda/sdb/...): ' drive
 
 	# Filesystem mount warning
 	echo "This script will create and format the partitions as follows:"
-	echo "/dev/sda1 - 1Gb will be mounted as /mnt/efi"
-	echo "/dev/sda5 - rest of space will be mounted as /"
-	read -p 'Continue? [y/N]: ' fsok
-	if ! [ $fsok = 'y' ] && ! [ $fsok = 'Y' ]
-	then 
-		echo "Edit the script to continue..."
-		exit
-	fi
 
 	# parted -s /dev/${drive} mklabel gpt mkpart ESP fat32 0% 256MiB mkpart primary ext4 256MiB 100% set 1 boot on
 	# to create the partitions programatically (rather than manually)
@@ -112,12 +102,14 @@ if [ "$1" == "" ]; then
 # 		q # and we're done
 # EOF
 	cfdisk /dev/${drive}
-	#mkfs.fat -F32 -L "EFI System" /dev/${drive}1
-	mkfs.ext4 -L "Arch Linux" /dev/${drive}5
+	read -p 'Boot (GRUB) partition number: ' d_boot
+	read -p 'Root partition number: ' d_root
+	#mkfs.fat -F32 -n "EFI System" /dev/${drive}${d_boot}
+	mkfs.ext4 -F -L "Arch Linux" /dev/${drive}${d_root}
 
-	mount /dev/${drive}5 /mnt
-	mkdir /mnt/efi
-	mount /dev/${drive}1 /mnt/efi
+	mount /dev/${drive}${d_root} /mnt
+	mkdir -v /mnt/efi
+	mount /dev/${drive}${d_boot} /mnt/efi
 
 	pacstrap /mnt ${base_install}
 
@@ -167,14 +159,14 @@ else
 	# echo "/swapfile    none    swap    defaults    0 0" >> /etc/fstab
 
 	# Install bootloader
-	grub-install --target=x86_64-efi --efi-directory=/mnt/efi --bootloader-id=GRUB
+	grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 	grub-mkconfig -o /boot/grub/grub.cfg
 
 	useradd -m -G wheel,uucp -s /bin/zsh -c "Vu Duc Nguyen" ${user}
 	#sudo -u ${user} xdg-user-dirs-update
 	#eval userpath=~${user}
-	sudo pacman -Syu gnome3 gnome3_extra
-	sudo pacman -S apps_install
+	pacman -Syu gnome3 gnome3_extra
+	pacman -S apps_install
 
 	for item in ${aurinstall}; do
 		name=$(basename ${item} .git)

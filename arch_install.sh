@@ -2,117 +2,84 @@
 
 timezone="Asia/Manila"
 localization="en_US.UTF-8"
-keyboardlayout="us"
-hostname="ThinkPad"
-swapsize="2G"
 
+# AMD: amd-ucode
+# Intel: intel-ucode
 base_install="
-	base base-devel linux-zen linux-firmware ntfs-3g neovim zsh grub os-prober intel-ucode efibootmgr dnsmasq zip unzip p7zip unrar tlp git
+	base base-devel linux-zen linux-firmware ntfs-3g neovim zsh grub os-prober intel-ucode efibootmgr dnsmasq zip unzip p7zip unrar tlp git man reflector
 "
-
-# install= "xf86-video-intel libva-intel-driver
-# 	xf86-input-synaptics pulseaudio networkmanager dnsmasq
-# 	xorg-server xorg-xinit xorg-xinput xorg-xbacklight libxft libxinerama
-# 	git xdg-user-dirs maim xdotool zip unzip gst-libav dunst gpick dmenu
-# 	thunar thunar-volman gvfs gvfs-mtp gvfs-gphoto2 ntfs-3g thunar-archive-plugin xarchiver tumbler ffmpegthumbnailer
-# 	rxvt-unicode chromium mousepad eom gimp pragha parole galculator transmission-gtk
-# 	nm-connection-editor blueman pavucontrol lxtask lxinput lxrandr lxappearance
-# 	ttf-dejavu gnome-themes-extra papirus-icon-theme "
 
 gnome3="
 	baobab cheese eog evince file-roller gdm gedit gnome-backgrounds gnome-boxes gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-color-manager gnome-contacts gnome-control-center gnome-disk-utility gnome-font-viewer gnome-keyring gnome-logs gnome-menus gnome-music gnome-photos gnome-screenshot gnome-session gnome-settings-daemon gnome-shell gnome-shell-extensions gnome-system-monitor gnome-terminal gnome-themes-extra gnome-user-share gnome-video-effects gnome-weather grilo-plugins gvfs gvfs-afc gvfs-goa gvfs-google gvfs-gphoto2 gvfs-mtp gvfs-nfs gvfs-smb mutter nautilus networkmanager simple-scan sushi totem tracker3 tracker3-miners xdg-user-dirs-gtk
 "
-
-gnome3_extra="
+# Gnome extra
+gnome3+="
 	dconf-editor ghex gnome-multi-writer gnome-nettool gnome-sound-recorder gnome-tweaks gnome-usage sysprof
 "
 
 apps_install="
-	chromium firefox
+	chromium firefox reflector
 "
 
 aur_install="
 	https://aur.archlinux.org/yay.git
 "
-git_install="
-
-"
 
 service="
+	gdm.service
 	NetworkManager.service
 	dnsmasq.service
 	bluetooth.service
 	fstrim.timer
 	tlp.service
+	reflector.service
 "
-if [ "$1" == "" ]; then
-	# Set up network connection
-	# ping -c 3 archlinux.org
-	# read -p 'Are you connected to internet? [y/N]: ' neton
-	# if ! [ $neton = 'y' ] && ! [ $neton = 'Y' ]
-	# then
-	# 	read -p 'Do you want to connect to the internet by wifi? [Y/n]: ' wfon
-	# 	if ! [ $wfon = 'n' ] && ! [ $wfon = 'N' ]
-	# 	then
-	# 		echo "List all Wi-Fi devices"
-	# 		iwd device list
-	# 		echo "Scan for networks"
-	# 		read -p 'Input Wi-Fi devices, you want scan: ' device
-	# 		iwd station ${device} scan
-	# 		echo "List all available networks"
-	# 		iwd station ${device} get-networks
-	# 		echo "Connect to a network"
-	# 		read -p 'Input SSID you want connect: ' ssid
-	# 		iwd station ${device} connect ${ssid}
-	# 	elif [ $wfon = 'n' ] || [ $wfon = 'N' ]
-	# 	then
-	# 		echo "Connect to internet to continue..."
-    # 		exit
-	# 	fi
-	# fi
 
+if [ "$1" == "" ]; then
+
+	# Update the system clock
 	timedatectl set-ntp true
 	timedatectl set-timezone ${timezone}
+	timedatectl set-local-rtc 1
 	
-	fdisk -l
-	read -p 'Input drive (sda/sdb/...): ' drive
+	# Partition the disks
+	lsblk -f
 
-	# Filesystem mount warning
-	echo "This script will create and format the partitions as follows:"
-
-	# parted -s /dev/${drive} mklabel gpt mkpart ESP fat32 0% 256MiB mkpart primary ext4 256MiB 100% set 1 boot on
-	# to create the partitions programatically (rather than manually)
-	# https://superuser.com/a/984637
-# 	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/${drive}
-# 		g # clear the in memory partition table
-# 		n # new partition
-# 		p # primary partition
-# 		1 # partition number 1
-# 			# default - start at beginning of disk 
-# 		+200M # 200 MB boot parttion
-# 		n # new partition
-# 		p # primary partition
-# 		2 # partion number 1
-# 			# default, start immediately after preceding partition
-# 			# default, extend partition to end of disk
-# 		a # make a partition bootable
-# 		1 # bootable partition is partition 1 -- /dev/sda1
-# 		p # print the in-memory partition table
-# 		w # write the partition table
-# 		q # and we're done
-# EOF
+	read -p 'Select block device (sda/sdb/...): ' drive
 	cfdisk /dev/${drive}
-	read -p 'Boot (GRUB) partition number: ' d_boot
-	read -p 'Root partition number: ' d_root
-	#mkfs.fat -F32 -n "EFI System" /dev/${drive}${d_boot}
-	mkfs.ext4 -F -L "Arch Linux" /dev/${drive}${d_root}
 
-	mount /dev/${drive}${d_root} /mnt
-	mkdir -v /mnt/efi
-	mount /dev/${drive}${d_boot} /mnt/efi
+	fdisk -l /dev/${drive}
+	# Format the partitions
+	read -p 'Boot (GRUB) partition number: ' p_boot
+	read -p 'Root partition number: ' p_root
 
+	read -p 'You have dual boot with windows??? [Y/n]: ' dual_on
+	if [ $dual_on = 'n' ] && [ $dual_on = 'N' ]
+	then 
+		mkfs.fat -F32 -n "EFI System" /dev/${drive}${p_boot}
+	fi
+
+	mkfs.ext4 -F -L "Arch Linux" /dev/${drive}${p_root}
+
+	# Mount the file systems
+	mount /dev/${drive}${p_root} /mnt
+	mkdir -v /mnt/boot
+	mount /dev/${drive}${p_boot} /mnt/boot
+
+	# Config pacman.conf
+	sed -i "/Color/s/^#//g" /etc/pacman.conf
+	sed -i "/TotalDownload/s/^#//g" /etc/pacman.conf
+	sed -i '/^#\[multilib\]/{N;s/#//g}' /etc/pacman.conf
+
+	# Install essential packages
 	pacstrap /mnt ${base_install}
 
+	# Config pacman.conf
+	sed -i "/Color/s/^#//g" mnt/etc/pacman.conf
+	sed -i "/TotalDownload/s/^#//g" mnt/etc/pacman.conf
+	sed -i '/^#\[multilib\]/{N;s/#//g}' mnt/etc/pacman.conf
+
+	# Fstab
 	genfstab -U /mnt >> /mnt/etc/fstab
 
 	cp $0 /mnt/setup
@@ -120,52 +87,69 @@ if [ "$1" == "" ]; then
 	echo "Enter user name:"
 	read user
 	echo "Enter ${user}'s password:"
-	read userpassword
+	read userpwd
 	echo "Enter root password:"
-	read rootpassword
+	read rootpwd
 
-	arch-chroot /mnt ./setup ${user} ${userpassword} ${rootpassword}
+	# Chroot
+	arch-chroot /mnt ./setup ${user} ${userpwd} ${rootpwd}
 	rm /mnt/setup
 
 	umount -R /mnt
 else
 	user=${1}
-	userpassword=${2}
-	rootpassword=${3}
+	userpwd=${2}
+	rootpwd=${3}
 
+	# Time zone
 	ln -sf /usr/share/zoneinfo/${timezone} /etc/localtime
-	hwclock --systohc
 	timedatectl set-local-rtc 1
+	hwclock --systohc
 
+	# Localization
 	sed -i "/${localization}/s/^#//g" /etc/locale.gen
-	echo "LANG=${localization}" > /etc/locale.conf
 	locale-gen
+	echo "LANG=${localization}" > /etc/locale.conf
 	#localectl set-locale LANG=${localization}
 	#echo "KEYMAP=${keyboardlayout}" > /etc/vconsole.conf
 
+	# Network configuration
+	read -p "Hostname: " hostname
 	echo "${hostname}" > /etc/hostname
 	echo "127.0.0.1  localhost" > /etc/hosts
 	echo "::1        localhost" >> /etc/hosts
 	echo "127.0.1.1  ${hostname}.localdomain  ${hostname}" >> /etc/hosts
 
+	# Default Editor
 	echo "EDITOR=nvim" >> /etc/environment
 
+	# visudo
 	sed -i "/%wheel ALL=(ALL) ALL/s/^# //g" /etc/sudoers
 
-	# fallocate -l ${swapsize} /swapfile
-	# chmod 600 /swapfile
-	# mkswap /swapfile > /dev/null
-	# echo "# /swapfile" >> /etc/fstab
-	# echo "/swapfile    none    swap    defaults    0 0" >> /etc/fstab
+	# Create Swap File
+	read -p 'Do you want to create a swap file? [y/N]: ' swap
+	if [ $swap = 'y' ] && [ $swap = 'Y' ]
+	then 
+		read -p "How big is the swap file? (GB _ Not support MB)" swapsize
+		# fallocate -l ${swapsize} /swapfile
+		dd if=/dev/zero of=/swapfile bs=1M count=${swapsize}G status=progress
+		chmod 600 /swapfile
+		mkswap /swapfile
+		echo "# /swapfile" >> /etc/fstab
+		echo "/swapfile    none    swap    defaults    0 0" >> /etc/fstab
+	fi
 
-	# Install bootloader
-	grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
+	# Install Boot loader
+	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
 	grub-mkconfig -o /boot/grub/grub.cfg
 
+	# Create User
 	useradd -m -G wheel,uucp -s /bin/zsh -c "Vu Duc Nguyen" ${user}
 	#sudo -u ${user} xdg-user-dirs-update
 	#eval userpath=~${user}
-	pacman -Syu gnome3 gnome3_extra
+
+	# Install Packages
+	pacman -Syu gnome3
 	pacman -S apps_install
 
 	for item in ${aurinstall}; do
@@ -179,26 +163,12 @@ else
 		rm -rf ${name}
 	done
 
-	# for item in ${gitinstall}; do
-	# 	name=$(basename ${item} .git)
-	# 	echo "Installing ${name}"
-	# 	cd ${userpath}/Documents
-	# 	sudo -u ${user} git clone ${item} 2> /dev/null
-	# 	cd ${name}
-	# 	make install > /dev/null
-	# done
-
-	# for item in ${gitdownload}; do
-	# 	name=$(basename ${item} .git)
-	# 	echo "Downloading ${name}"
-	# 	cd ${userpath}/Documents
-	# 	sudo -u ${user} git clone ${item} 2> /dev/null
-	# done
-
+	# Enable Service
 	for item in ${service}; do
 		systemctl enable ${item}
 	done
 
-	echo -en "${rootpassword}\n${rootpassword}" | passwd
-	echo -en "${userpassword}\n${userpassword}" | passwd ${user}
+	# Create password for root and user account
+	echo -en "${rootpwd}\n${rootpwd}" | passwd
+	echo -en "${userpwd}\n${userpwd}" | passwd ${user}
 fi

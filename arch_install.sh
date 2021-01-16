@@ -6,7 +6,7 @@ localization="en_US.UTF-8"
 # AMD: amd-ucode
 # Intel: intel-ucode
 base_install="
-	base base-devel linux-zen linux-firmware ntfs-3g neovim zsh grub os-prober intel-ucode efibootmgr dnsmasq zip unzip p7zip unrar tlp git man reflector
+	base base-devel linux-zen linux-firmware neovim zsh grub os-prober efibootmgr git man reflector
 "
 
 # install= "xf86-video-intel libva-intel-driver
@@ -18,29 +18,12 @@ base_install="
 # 	nm-connection-editor blueman pavucontrol lxtask lxinput lxrandr lxappearance
 # 	ttf-dejavu gnome-themes-extra papirus-icon-theme "
 
-gnome3="
-	baobab cheese eog evince file-roller gdm gedit gnome-backgrounds gnome-boxes gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-color-manager gnome-contacts gnome-control-center gnome-disk-utility gnome-font-viewer gnome-keyring gnome-logs gnome-menus gnome-music gnome-photos gnome-screenshot gnome-session gnome-settings-daemon gnome-shell gnome-shell-extensions gnome-system-monitor gnome-terminal gnome-themes-extra gnome-user-share gnome-video-effects gnome-weather grilo-plugins gvfs gvfs-afc gvfs-goa gvfs-google gvfs-gphoto2 gvfs-mtp gvfs-nfs gvfs-smb mutter nautilus networkmanager simple-scan sushi totem tracker3 tracker3-miners xdg-user-dirs-gtk
-"
-# Gnome extra
-gnome3+="
-	dconf-editor ghex gnome-multi-writer gnome-nettool gnome-sound-recorder gnome-tweaks gnome-usage sysprof
-"
-
-apps_install="
-	chromium firefox reflector
-"
-
 aur_install="
 	https://aur.archlinux.org/yay.git
 "
 
 service="
-	gdm.service
-	NetworkManager.service
-	dnsmasq.service
-	bluetooth.service
 	fstrim.timer
-	tlp.service
 	reflector.service
 "
 
@@ -161,10 +144,6 @@ else
 	sed -i "/Color/s/^#//g" /etc/pacman.conf
 	sed -i "/TotalDownload/s/^#//g" /etc/pacman.conf
 	sed -i '/^#\[multilib\]/{N;s/#//g}' /etc/pacman.conf
-
-	# Install Packages
-	pacman -Syu ${gnome3}
-	pacman -S ${apps_install}
 
 	for item in ${aur_install}; do
 		name=$(basename ${item} .git)

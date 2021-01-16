@@ -75,9 +75,9 @@ if [ "$1" == "" ]; then
 	pacstrap /mnt ${base_install}
 
 	# Config pacman.conf
-	sed -i "/Color/s/^#//g" mnt/etc/pacman.conf
-	sed -i "/TotalDownload/s/^#//g" mnt/etc/pacman.conf
-	sed -i '/^#\[multilib\]/{N;s/#//g}' mnt/etc/pacman.conf
+	sed -i "/Color/s/^#//g" /mnt/etc/pacman.conf
+	sed -i "/TotalDownload/s/^#//g" /mnt/etc/pacman.conf
+	sed -i '/^#\[multilib\]/{N;s/#//g}' /mnt/etc/pacman.conf
 
 	# Fstab
 	genfstab -U /mnt >> /mnt/etc/fstab

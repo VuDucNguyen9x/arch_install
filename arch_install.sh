@@ -9,6 +9,15 @@ base_install="
 	base base-devel linux-zen linux-firmware ntfs-3g neovim zsh grub os-prober intel-ucode efibootmgr dnsmasq zip unzip p7zip unrar tlp git man reflector
 "
 
+# install= "xf86-video-intel libva-intel-driver
+# 	xf86-input-synaptics pulseaudio networkmanager dnsmasq
+# 	xorg-server xorg-xinit xorg-xinput xorg-xbacklight libxft libxinerama
+# 	git xdg-user-dirs maim xdotool zip unzip gst-libav dunst gpick dmenu
+# 	thunar thunar-volman gvfs gvfs-mtp gvfs-gphoto2 ntfs-3g thunar-archive-plugin xarchiver tumbler ffmpegthumbnailer
+# 	rxvt-unicode chromium mousepad eom gimp pragha parole galculator transmission-gtk
+# 	nm-connection-editor blueman pavucontrol lxtask lxinput lxrandr lxappearance
+# 	ttf-dejavu gnome-themes-extra papirus-icon-theme "
+
 gnome3="
 	baobab cheese eog evince file-roller gdm gedit gnome-backgrounds gnome-boxes gnome-calculator gnome-calendar gnome-characters gnome-clocks gnome-color-manager gnome-contacts gnome-control-center gnome-disk-utility gnome-font-viewer gnome-keyring gnome-logs gnome-menus gnome-music gnome-photos gnome-screenshot gnome-session gnome-settings-daemon gnome-shell gnome-shell-extensions gnome-system-monitor gnome-terminal gnome-themes-extra gnome-user-share gnome-video-effects gnome-weather grilo-plugins gvfs gvfs-afc gvfs-goa gvfs-google gvfs-gphoto2 gvfs-mtp gvfs-nfs gvfs-smb mutter nautilus networkmanager simple-scan sushi totem tracker3 tracker3-miners xdg-user-dirs-gtk
 "
@@ -49,6 +58,7 @@ if [ "$1" == "" ]; then
 	cfdisk /dev/${drive}
 
 	fdisk -l /dev/${drive}
+	echo
 	# Format the partitions
 	read -p 'Boot (GRUB) partition number: ' p_boot
 	read -p 'Root partition number: ' p_root
@@ -84,7 +94,7 @@ if [ "$1" == "" ]; then
 
 	cp $0 /mnt/setup
 	
-	echo "Enter user name:"
+	echo -e "\nEnter user name:"
 	read user
 	echo "Enter ${user}'s password:"
 	read userpwd
@@ -128,7 +138,7 @@ else
 
 	# Create Swap File
 	read -p 'Do you want to create a swap file? [y/N]: ' swap
-	if [ $swap = 'y' ] && [ $swap = 'Y' ]
+	if [ $swap = 'y' ] || [ $swap = 'Y' ]
 	then 
 		read -p "How big is the swap file? (GB _ Not support MB)" swapsize
 		# fallocate -l ${swapsize} /swapfile
@@ -149,16 +159,16 @@ else
 	#eval userpath=~${user}
 
 	# Install Packages
-	pacman -Syu gnome3
-	pacman -S apps_install
+	pacman -Syu ${gnome3}
+	pacman -S ${apps_install}
 
-	for item in ${aurinstall}; do
+	for item in ${aur_install}; do
 		name=$(basename ${item} .git)
 		echo "Installing ${name}"
 		cd /tmp
 		sudo -u ${user} git clone ${item}
 		cd ${name}
-		sudo -u ${user} makepkg -si
+		sudo -u makepkg -si
 		cd /tmp
 		rm -rf ${name}
 	done

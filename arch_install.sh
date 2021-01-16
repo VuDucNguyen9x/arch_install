@@ -84,11 +84,6 @@ if [ "$1" == "" ]; then
 	# Install essential packages
 	pacstrap /mnt ${base_install}
 
-	# Config pacman.conf
-	sed -i "/Color/s/^#//g" /mnt/etc/pacman.conf
-	sed -i "/TotalDownload/s/^#//g" /mnt/etc/pacman.conf
-	sed -i '/^#\[multilib\]/{N;s/#//g}' /mnt/etc/pacman.conf
-
 	# Fstab
 	genfstab -U /mnt >> /mnt/etc/fstab
 
@@ -140,7 +135,7 @@ else
 	read -p 'Do you want to create a swap file? [y/N]: ' swap
 	if [ $swap = 'y' ] || [ $swap = 'Y' ]
 	then 
-		read -p "How big is the swap file? (GB _ Not support MB)" swapsize
+		read -p "How big is the swap file? (GB _ Not support MB): " swapsize
 		# fallocate -l ${swapsize} /swapfile
 		dd if=/dev/zero of=/swapfile bs=1M count=${swapsize}G status=progress
 		chmod 600 /swapfile
@@ -158,6 +153,15 @@ else
 	#sudo -u ${user} xdg-user-dirs-update
 	#eval userpath=~${user}
 
+	# Create password for root and user account
+	echo -en "${rootpwd}\n${rootpwd}" | passwd
+	echo -en "${userpwd}\n${userpwd}" | passwd ${user}
+
+	# Config pacman.conf
+	sed -i "/Color/s/^#//g" /etc/pacman.conf
+	sed -i "/TotalDownload/s/^#//g" /etc/pacman.conf
+	sed -i '/^#\[multilib\]/{N;s/#//g}' /etc/pacman.conf
+
 	# Install Packages
 	pacman -Syu ${gnome3}
 	pacman -S ${apps_install}
@@ -168,7 +172,7 @@ else
 		cd /tmp
 		sudo -u ${user} git clone ${item}
 		cd ${name}
-		sudo -u makepkg -si
+		sudo -u ${user} makepkg -si
 		cd /tmp
 		rm -rf ${name}
 	done
@@ -178,7 +182,4 @@ else
 		systemctl enable ${item}
 	done
 
-	# Create password for root and user account
-	echo -en "${rootpwd}\n${rootpwd}" | passwd
-	echo -en "${userpwd}\n${userpwd}" | passwd ${user}
 fi

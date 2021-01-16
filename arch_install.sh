@@ -139,12 +139,14 @@ else
 	# Create password for root and user account
 	echo -en "${rootpwd}\n${rootpwd}" | passwd
 	echo -en "${userpwd}\n${userpwd}" | passwd ${user}
-
+	
 	# Config pacman.conf
 	sed -i "/Color/s/^#//g" /etc/pacman.conf
 	sed -i "/TotalDownload/s/^#//g" /etc/pacman.conf
 	sed -i '/^#\[multilib\]/{N;s/#//g}' /etc/pacman.conf
-
+	
+	nvim /etc/pacman.conf
+	
 	for item in ${aur_install}; do
 		name=$(basename ${item} .git)
 		echo "Installing ${name}"

@@ -129,7 +129,7 @@ else
 
 	# Install Packages
 	pacman -Syu xorg-server
-	pacman -S plasma-meta
+	pacman -S plasma-meta kde-applications-meta
 
 	# Enable Service
 	for item in ${service}; do

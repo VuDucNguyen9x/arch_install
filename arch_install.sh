@@ -6,23 +6,16 @@ localization="en_US.UTF-8"
 # AMD: amd-ucode
 # Intel: intel-ucode
 base_install="
-	base base-devel linux-zen linux-firmware neovim zsh grub os-prober efibootmgr git man reflector
+	base base-devel linux linux-firmware neovim zsh grub git man reflector
 "
-
-# install= "xf86-video-intel libva-intel-driver
-# 	xf86-input-synaptics pulseaudio networkmanager dnsmasq
-# 	xorg-server xorg-xinit xorg-xinput xorg-xbacklight libxft libxinerama
-# 	git xdg-user-dirs maim xdotool zip unzip gst-libav dunst gpick dmenu
-# 	thunar thunar-volman gvfs gvfs-mtp gvfs-gphoto2 ntfs-3g thunar-archive-plugin xarchiver tumbler ffmpegthumbnailer
-# 	rxvt-unicode chromium mousepad eom gimp pragha parole galculator transmission-gtk
-# 	nm-connection-editor blueman pavucontrol lxtask lxinput lxrandr lxappearance
-# 	ttf-dejavu gnome-themes-extra papirus-icon-theme "
 
 aur_install="
 	https://aur.archlinux.org/yay.git
 "
 
 service="
+	sddm.service
+	NetworkManager.service
 	fstrim.timer
 	reflector.service
 "
@@ -46,18 +39,10 @@ if [ "$1" == "" ]; then
 	read -p 'Boot (GRUB) partition number: ' p_boot
 	read -p 'Root partition number: ' p_root
 
-	read -p 'You have dual boot with windows??? [Y/n]: ' dual_on
-	if [ $dual_on = 'n' ] && [ $dual_on = 'N' ]
-	then 
-		mkfs.fat -F32 -n "EFI System" /dev/${drive}${p_boot}
-	fi
-
 	mkfs.ext4 -F -L "Arch Linux" /dev/${drive}${p_root}
 
 	# Mount the file systems
 	mount /dev/${drive}${p_root} /mnt
-	mkdir -v /mnt/boot
-	mount /dev/${drive}${p_boot} /mnt/boot
 
 	# Config pacman.conf
 	sed -i "/Color/s/^#//g" /etc/pacman.conf
@@ -91,7 +76,6 @@ else
 
 	# Time zone
 	ln -sf /usr/share/zoneinfo/${timezone} /etc/localtime
-	timedatectl set-local-rtc 1
 	hwclock --systohc
 
 	# Localization
@@ -112,7 +96,7 @@ else
 	echo "EDITOR=nvim" >> /etc/environment
 
 	# visudo
-	sed -i "/%wheel ALL=(ALL) ALL/s/^# //g" /etc/sudoers
+	sed -i "/%wheel ALL=(ALL) NOPASSWD: ALL/s/^# //g" /etc/sudoers
 
 	# Create Swap File
 	read -p 'Do you want to create a swap file? [y/N]: ' swap
@@ -128,7 +112,7 @@ else
 	fi
 
 	# Install Boot loader
-	grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB --recheck
+	grub-install /dev/${drive}
 	grub-mkconfig -o /boot/grub/grub.cfg
 
 	# Create User
@@ -139,24 +123,15 @@ else
 	# Create password for root and user account
 	echo -en "${rootpwd}\n${rootpwd}" | passwd
 	echo -en "${userpwd}\n${userpwd}" | passwd ${user}
-	
+
 	# Config pacman.conf
 	sed -i "/Color/s/^#//g" /etc/pacman.conf
 	sed -i "/TotalDownload/s/^#//g" /etc/pacman.conf
 	sed -i '/^#\[multilib\]/{N;s/#//g}' /etc/pacman.conf
-	
-	nvim /etc/pacman.conf
-	
-	for item in ${aur_install}; do
-		name=$(basename ${item} .git)
-		echo "Installing ${name}"
-		cd /tmp
-		sudo -u ${user} git clone ${item}
-		cd ${name}
-		sudo -u ${user} makepkg -si
-		cd /tmp
-		rm -rf ${name}
-	done
+
+	# Install Packages
+	pacman -Syu xorg-server
+	pacman -S pladma-meta
 
 	# Enable Service
 	for item in ${service}; do

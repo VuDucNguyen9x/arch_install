@@ -36,7 +36,6 @@ if [ "$1" == "" ]; then
 	fdisk -l /dev/${drive}
 	echo
 	# Format the partitions
-	read -p 'Boot (GRUB) partition number: ' p_boot
 	read -p 'Root partition number: ' p_root
 
 	mkfs.ext4 -F -L "Arch Linux" /dev/${drive}${p_root}
@@ -68,7 +67,6 @@ if [ "$1" == "" ]; then
 	arch-chroot /mnt ./setup ${user} ${userpwd} ${rootpwd}
 	rm /mnt/setup
 
-	umount -R /mnt
 else
 	user=${1}
 	userpwd=${2}

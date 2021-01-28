@@ -129,7 +129,7 @@ else
 
 	# Install Packages
 	pacman -Syu xorg-server
-	pacman -S pladma-meta
+	pacman -S plasma-meta
 
 	# Enable Service
 	for item in ${service}; do

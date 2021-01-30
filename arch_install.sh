@@ -64,13 +64,14 @@ if [ "$1" == "" ]; then
 	read rootpwd
 
 	# Chroot
-	arch-chroot /mnt ./setup ${user} ${userpwd} ${rootpwd}
+	arch-chroot /mnt ./setup ${user} ${userpwd} ${rootpwd} ${drive}
 	rm /mnt/setup
 
 else
 	user=${1}
 	userpwd=${2}
 	rootpwd=${3}
+	drive=${4}
 
 	# Time zone
 	ln -sf /usr/share/zoneinfo/${timezone} /etc/localtime
